@@ -57,7 +57,6 @@ router.delete("/:id", async (req, res) => {
     } else {
       res.status(404).json({ error: "Cliente não encontrado" });
     }
-    res.json(result.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro interno do servidor" });
