@@ -3,7 +3,16 @@ const pool = require("./db");
 class PopulaBanco {
   async popularBanco() {
     await this.adicionarClientes();
-    await this.adicionarProdutos();
+    await this.adicionarProdutoEAtualizaEstoque("Maçã", 2.99);
+    await this.adicionarProdutoEAtualizaEstoque("Banana", 1.99);
+    await this.adicionarProdutoEAtualizaEstoque("Morango", 3.5);
+    await this.adicionarProdutoEAtualizaEstoque("Abacaxi", 4.99);
+    await this.adicionarProdutoEAtualizaEstoque("Pêssego", 3.75);
+    await this.adicionarProdutoEAtualizaEstoque("Uva", 5.25);
+    await this.adicionarProdutoEAtualizaEstoque("Tomate", 2.25);
+    await this.adicionarProdutoEAtualizaEstoque("Cenoura", 1.75);
+    await this.adicionarProdutoEAtualizaEstoque("Brócolis", 2.5);
+    await this.adicionarProdutoEAtualizaEstoque("Abóbora", 3.99);
   }
 
   async adicionarClientes() {
@@ -23,25 +32,20 @@ class PopulaBanco {
     return;
   }
 
-  async adicionarProdutos() {
-    await pool.query(`
-      INSERT INTO produtos (
-        nome,
-        preco
-      )
-      VALUES
-        ('Maçã', 2.99),
-        ('Banana', 1.99),
-        ('Morango', 3.50),
-        ('Abacaxi', 4.99),
-        ('Pêssego', 3.75),
-        ('Uva', 5.25),
-        ('Tomate', 2.25),
-        ('Cenoura', 1.75),
-        ('Brócolis', 2.50),
-        ('Abóbora', 3.99);
-    `);
-    console.log("Produtos adicionados com sucesso");
+  async adicionarProdutoEAtualizaEstoque(nome, preco) {
+    const resultProduto = await pool.query(
+      "INSERT INTO produtos (nome, preco) VALUES ($1, $2) RETURNING *",
+      [nome, preco]
+    );
+
+    const id_produto = resultProduto.rows[0].id;
+
+    await pool.query(
+      "INSERT INTO estoque (id_produto, quantidade) VALUES ($1, 0)",
+      [id_produto]
+    );
+
+    console.log("Produto adicionado com sucesso");
     return;
   }
 }

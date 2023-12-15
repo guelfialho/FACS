@@ -44,6 +44,35 @@ router.post("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const id = req.params.id;
   try {
+    // Verificar se o cliente existe
+    const clienteExistente = await pool.query(
+      "SELECT * FROM clientes WHERE id = $1",
+      [id]
+    );
+
+    if (clienteExistente.rows.length === 0) {
+      res.status(404).json({ error: "Cliente não encontrado" });
+      return;
+    }
+
+    // Verificar se há vendas associadas ao cliente
+    const vendasAssociadas = await pool.query(
+      "SELECT * FROM vendas WHERE id_cliente = $1",
+      [id]
+    );
+
+    // Se houver vendas associadas, informe que não é possível excluir o cliente
+    if (vendasAssociadas.rows.length > 0) {
+      res
+        .status(400)
+        .json({
+          error:
+            "Não é possível excluir o cliente com vendas associadas. Considere desativá-lo.",
+        });
+      return;
+    }
+
+    // Se não houver vendas associadas, exclua o cliente
     const result = await pool.query(
       "DELETE FROM clientes WHERE id = $1 RETURNING *",
       [id]
@@ -55,7 +84,7 @@ router.delete("/:id", async (req, res) => {
         cliente: result.rows[0],
       });
     } else {
-      res.status(404).json({ error: "Cliente não encontrado" });
+      res.status(500).json({ error: "Erro ao excluir o cliente" });
     }
   } catch (error) {
     console.error(error);

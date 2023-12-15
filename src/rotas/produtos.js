@@ -32,11 +32,19 @@ router.post("/", async (req, res) => {
   const { nome, preco } = req.body;
 
   try {
-    const result = await pool.query(
+    const resultProduto = await pool.query(
       "INSERT INTO produtos (nome, preco) VALUES ($1, $2) RETURNING *",
       [nome, preco]
     );
-    res.json(result.rows[0]);
+
+    const id_produto = resultProduto.rows[0].id;
+
+    await pool.query(
+      "INSERT INTO estoque (id_produto, quantidade) VALUES ($1, 0)",
+      [id_produto]
+    );
+
+    res.json(resultProduto.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro interno do servidor" });
@@ -47,6 +55,32 @@ router.post("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const id = req.params.id;
   try {
+    const produtoExistente = await pool.query(
+      "SELECT * FROM produtos WHERE id = $1",
+      [id]
+    );
+
+    if (produtoExistente.rows.length === 0) {
+      res.status(404).json({ error: "Produto não encontrado" });
+      return;
+    }
+
+    const vendasAssociadas = await pool.query(
+      "SELECT * FROM vendas WHERE id_produto = $1",
+      [id]
+    );
+
+    if (vendasAssociadas.rows.length > 0) {
+      res.status(400).json({
+        error:
+          "Não é possível excluir o produto com vendas associadas. Considere desativá-lo.",
+      });
+      return;
+    }
+
+    await pool.query("DELETE FROM estoque WHERE id_produto = $1 RETURNING *", [
+      id,
+    ]);
     const result = await pool.query(
       "DELETE FROM produtos WHERE id = $1 RETURNING *",
       [id]
@@ -58,7 +92,7 @@ router.delete("/:id", async (req, res) => {
         produto: result.rows[0],
       });
     } else {
-      res.status(404).json({ error: "Produto não encontrado" });
+      res.status(500).json({ error: "Erro ao excluir o produto" });
     }
   } catch (error) {
     console.error(error);
