@@ -5,6 +5,7 @@ const cors = require("cors");
 const clientesRotas = require("./rotas/clientes.js");
 const produtosRotas = require("./rotas/produtos.js");
 const estoqueRotas = require("./rotas/estoque.js");
+const vendasRotas = require("./rotas/vendas.js");
 
 const app = express();
 const port = 3333;
@@ -13,6 +14,7 @@ app.use(bodyParser.json());
 app.use("/clientes", clientesRotas);
 app.use("/produtos", produtosRotas);
 app.use("/estoque", estoqueRotas);
+app.use("/vendas", vendasRotas);
 
 app.use(
   cors({
